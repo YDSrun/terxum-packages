@@ -25,14 +25,21 @@ jobs:
       - name: Clone repository
         uses: actions/checkout@v4
         
+      - name: Enable zram (Prevent Out Of Memory)
+        uses: ./.github/actions/zram
+        with:
+          algorithm: zstd
+          size: 16G
+          priority: 100
+          device_name: /dev/zram0
+        
       - name: Build termux-package-builder docker image
         run: docker build -t ghcr.io/termux/package-builder:latest scripts/
 
       - name: Build custom bootstraps from source
-        # 这里必须使用 build-bootstraps.sh 而不是 generate-bootstraps.sh
-        # 因为我们需要根据修改后的 properties.sh 从头编译 C/C++ 源码
+        # 修正 Gradle 的 Android SDK 写权限和 repository.cfg 文件缺失问题
         run: |
-          ./scripts/run-docker.sh ./scripts/build-bootstraps.sh --architectures ${{ github.event.inputs.architecture }}
+          ./scripts/run-docker.sh bash -c "sudo mkdir -p ~/.android && sudo touch ~/.android/repositories.cfg && sudo chmod -R 777 ~/.android /home/builder/lib && ./scripts/build-bootstraps.sh --architectures ${{ github.event.inputs.architecture }}"
           
       - name: Upload bootstrap artifact
         uses: actions/upload-artifact@v4
