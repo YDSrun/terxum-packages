@@ -25,8 +25,8 @@ jobs:
       - name: Clone repository
         uses: actions/checkout@v4
         
-      - name: Fetch termux-package-builder docker image
-        run: docker pull ghcr.io/termux/package-builder:latest
+      - name: Build termux-package-builder docker image
+        run: docker build -t ghcr.io/termux/package-builder:latest scripts/
 
       - name: Build custom bootstraps from source
         # 这里必须使用 build-bootstraps.sh 而不是 generate-bootstraps.sh
