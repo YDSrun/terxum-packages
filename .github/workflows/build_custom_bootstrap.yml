@@ -1,0 +1,41 @@
+name: Build Custom Bootstrap (com.terxum)
+
+on:
+  workflow_dispatch:
+    inputs:
+      architecture:
+        description: 'Architecture to build (e.g., aarch64, arm, x86_64)'
+        required: true
+        default: 'aarch64'
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Maximize build space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+
+      - name: Clone repository
+        uses: actions/checkout@v4
+        
+      - name: Fetch termux-package-builder docker image
+        run: docker pull ghcr.io/termux/package-builder:latest
+
+      - name: Build custom bootstraps from source
+        # 这里必须使用 build-bootstraps.sh 而不是 generate-bootstraps.sh
+        # 因为我们需要根据修改后的 properties.sh 从头编译 C/C++ 源码
+        run: |
+          ./scripts/run-docker.sh ./scripts/build-bootstraps.sh --architectures ${{ github.event.inputs.architecture }}
+          
+      - name: Upload bootstrap artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bootstrap-${{ github.event.inputs.architecture }}.zip
+          path: "*.zip"
